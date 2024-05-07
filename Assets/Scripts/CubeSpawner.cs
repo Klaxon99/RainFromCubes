@@ -11,14 +11,14 @@ public class CubeSpawner : MonoBehaviour
 
     private Collider _spawnPlaceCollider;
 
-    private void Start()
-    {
-        StartCoroutine(CubeSpawnRoutine());
-    }
-
     private void Awake()
     {
         _spawnPlaceCollider = GetComponent<Collider>();
+    }
+
+    private void Start()
+    {
+        StartCoroutine(CubeSpawnRoutine());
     }
 
     private IEnumerator CubeSpawnRoutine()

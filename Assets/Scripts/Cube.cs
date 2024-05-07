@@ -4,8 +4,6 @@ using UnityEngine;
 [RequireComponent(typeof(MeshRenderer))]
 public class Cube : MonoBehaviour
 {
-    [SerializeField] private Material _collisionMaterial;
-
     private MeshRenderer _meshRenderer;
     private float _lifeTime;
     private CubeCreator _cubeCreator;
@@ -16,10 +14,10 @@ public class Cube : MonoBehaviour
         _meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    public void Initialize(float lifeTime, CubeCreator cubeCreator)
+    private void OnDisable()
     {
-        _lifeTime = lifeTime;
-        _cubeCreator = cubeCreator;
+        _hasCollision = false;
+        _meshRenderer.material.color = Color.gray;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -28,11 +26,20 @@ public class Cube : MonoBehaviour
         {
             if (_hasCollision == false)
             {
-                _meshRenderer.material = _collisionMaterial;
-                StartCoroutine(WaitLifeTimeRoutine());
+                float minColor = 0f;
+                float maxColor = 1f;
+                _meshRenderer.material.color = Color.Lerp(Color.red, Color.green, Random.Range(minColor, maxColor));
                 _hasCollision = true;
+
+                StartCoroutine(WaitLifeTimeRoutine());
             }
         }
+    }
+
+    public void Initialize(float lifeTime, CubeCreator cubeCreator)
+    {
+        _lifeTime = lifeTime;
+        _cubeCreator = cubeCreator;
     }
 
     private IEnumerator WaitLifeTimeRoutine()
@@ -41,6 +48,6 @@ public class Cube : MonoBehaviour
 
         yield return wait;
 
-        _cubeCreator.DestroyCube(this);
+        _cubeCreator.ReturnCube(this);
     }
 }
