@@ -1,53 +1,65 @@
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(MeshRenderer))]
 public class Cube : MonoBehaviour
 {
+    private Rigidbody _rigidbody;
     private MeshRenderer _meshRenderer;
-    private float _lifeTime;
-    private CubeCreator _cubeCreator;
-    private bool _hasCollision = false;
+    private WaitForSeconds _lifeTimeWait;
+    private bool _hasCollision;
+    private CubeSpawner _spawner;
+
+    public float LifeTime { get; private set; }
 
     private void Awake()
     {
+        _rigidbody = GetComponent<Rigidbody>();
         _meshRenderer = GetComponent<MeshRenderer>();
     }
 
     private void OnDisable()
     {
-        _hasCollision = false;
-        _meshRenderer.material.color = Color.gray;
+        ResetState();
+    }
+
+    public void Initialize(float lifeTime, CubeSpawner spawner)
+    {
+        _spawner = spawner;
+        LifeTime = lifeTime;
+        _lifeTimeWait = new WaitForSeconds(LifeTime);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.TryGetComponent(out SpawnPlace spawnPlace))
+        if (_hasCollision == false)
         {
-            if (_hasCollision == false)
+            if (collision.collider.TryGetComponent(out Platform platform))
             {
+                _hasCollision = true;
                 float minColor = 0f;
                 float maxColor = 1f;
-                _meshRenderer.material.color = Color.Lerp(Color.red, Color.green, Random.Range(minColor, maxColor));
-                _hasCollision = true;
+                _meshRenderer.material.color = Color.Lerp(Color.black, Color.white, Random.Range(minColor, maxColor));
 
                 StartCoroutine(WaitLifeTimeRoutine());
             }
         }
     }
 
-    public void Initialize(float lifeTime, CubeCreator cubeCreator)
-    {
-        _lifeTime = lifeTime;
-        _cubeCreator = cubeCreator;
-    }
-
     private IEnumerator WaitLifeTimeRoutine()
     {
-        WaitForSeconds wait = new WaitForSeconds(_lifeTime);
+        yield return _lifeTimeWait;
 
-        yield return wait;
+        _spawner.Return(this);
+    }
 
-        _cubeCreator.ReturnCube(this);
+    private void ResetState()
+    {
+        _hasCollision = false;
+        _meshRenderer.material.color = Color.gray;
+        _rigidbody.velocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
+        transform.rotation = Quaternion.identity;
     }
 }

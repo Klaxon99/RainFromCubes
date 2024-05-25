@@ -1,33 +1,37 @@
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
-public class CubeSpawner : MonoBehaviour
+public class CubeSpawner : Spawner<Cube>
 {
-    [SerializeField] private CubeCreator _cubeCreator;
+    [SerializeField] private BombSpawner _bombSpawner;
+    [SerializeField] private float _spawnHeight;
+    [SerializeField] private Collider _spawnPlace;
     [SerializeField] private float _spawnDelay;
-    [SerializeField] private float _minSpawnHeight;
-    [SerializeField] private float _maxSpawnHeight;
-
-    private Collider _spawnPlaceCollider;
-
-    private void Awake()
-    {
-        _spawnPlaceCollider = GetComponent<Collider>();
-    }
 
     private void Start()
     {
-        StartCoroutine(CubeSpawnRoutine());
+        StartCoroutine(SpawnRoutine());
     }
 
-    private IEnumerator CubeSpawnRoutine()
+    public override void Return(Cube cube)
+    {
+        Bomb bomb = _bombSpawner.Spawn(cube.transform.position);
+
+        bomb.Initialize(_bombSpawner, cube.LifeTime);
+
+        base.Return(cube);
+    }
+
+    private IEnumerator SpawnRoutine()
     {
         WaitForSeconds wait = new WaitForSeconds(_spawnDelay);
+        int minLifeTime = 2;
+        int maxLifeTime = 5;
 
-        while (enabled)
+        while(enabled)
         {
-            _cubeCreator.CreateCube(GetRandomSpawnPosition());
+            Cube cube = Spawn(GetRandomSpawnPosition());
+            cube.Initialize(Random.Range(minLifeTime, maxLifeTime), this);
 
             yield return wait;
         }
@@ -35,12 +39,10 @@ public class CubeSpawner : MonoBehaviour
 
     private Vector3 GetRandomSpawnPosition()
     {
-        Vector3 planeBounds = _spawnPlaceCollider.bounds.extents;
+        Vector3 spawnPlaceSize = _spawnPlace.bounds.extents;
+        float spawnPositionX = Random.Range(-spawnPlaceSize.x, spawnPlaceSize.x);
+        float spawnPositionZ = Random.Range(-spawnPlaceSize.z, spawnPlaceSize.z);
 
-        float randomX = Random.Range(-planeBounds.x, planeBounds.x);
-        float randomY = Random.Range(_minSpawnHeight, _maxSpawnHeight);
-        float randomZ = Random.Range(-planeBounds.z, planeBounds.z);
-
-        return new Vector3(randomX, randomY, randomZ);
+        return new Vector3(spawnPositionX, _spawnHeight, spawnPositionZ);
     }
 }
